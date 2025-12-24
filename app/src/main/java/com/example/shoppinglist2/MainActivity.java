@@ -121,6 +121,24 @@ public class MainActivity extends AppCompatActivity {
                             item.name = p.name;
                             item.note = p.notes;
                             item.isBought = p.purchased;
+
+                            // Передаем даты с сервера
+                            if (p.created_at != null) {
+                                item.createdAt = p.created_at;
+                            } else {
+                                item.createdAt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                        .format(new java.util.Date());
+                            }
+
+                            // Используем updated_at если есть, иначе created_at
+                            if (p.updated_at != null) {
+                                item.updatedAt = p.updated_at;
+                            } else if (p.created_at != null) {
+                                item.updatedAt = p.created_at;
+                            } else {
+                                item.updatedAt = item.createdAt;
+                            }
+
                             items.add(item);
                         }
                         adapter.setItems(items);
@@ -197,8 +215,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("API", "Товар обновлен: " + id);
                 } else {
                     Log.e("API", "Ошибка обновления: " + response.code());
-                    loadProductsFromServer(); // Синхронизировать состояние
                 }
+                loadProductsFromServer(); // Синхронизировать состояние
             }
 
             @Override

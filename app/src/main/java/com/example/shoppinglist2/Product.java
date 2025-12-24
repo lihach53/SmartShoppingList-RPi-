@@ -7,4 +7,14 @@ public class Product {
     public String notes;
     public String created_at;
     public String updated_at;
+
+    // Конструктор по умолчанию
+    public Product() {}
+
+    // Конструктор для удобства
+    public Product(String name, boolean purchased, String notes) {
+        this.name = name;
+        this.purchased = purchased;
+        this.notes = notes;
+    }
 }
