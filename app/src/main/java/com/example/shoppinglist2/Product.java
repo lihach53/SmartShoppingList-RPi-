@@ -6,4 +6,5 @@ public class Product {
     public boolean purchased;
     public String notes;
     public String created_at;
+    public String updated_at;
 }

@@ -35,7 +35,10 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
 
     // === IP RASPBERRY PI ===
-    private static final String BASE_URL = "http://192.168.1.105:5000/"; // ← ЗАМЕНИ НА СВОЙ IP!
+    // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ IP АДРЕС ВАШЕГО RASPBERRY PI!
+    // Пример: "http://192.168.1.100:5000/"
+    // Для эмулятора можно использовать "http://10.0.2.2:5000/"
+    private static final String BASE_URL = "http://10.0.2.2:5000/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,11 +55,10 @@ public class MainActivity extends AppCompatActivity {
         adapter = new ShoppingItemAdapter();
         recyclerView.setAdapter(adapter);
 
-        // Инициализация Retrofit
-        Gson gson = new GsonBuilder().setLenient().create();
+        // Инициализация Retrofit с правильным URL
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         api = retrofit.create(ShoppingApi.class);
@@ -70,11 +72,6 @@ public class MainActivity extends AppCompatActivity {
             String note = etItemNote.getText().toString().trim();
 
             if (!name.isEmpty()) {
-                if (!name.matches("[\\p{L}\\p{N}\\s\\-.,]+")) {
-                    Toast.makeText(this, "Используйте только буквы, цифры и пробелы", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
                 Product product = new Product();
                 product.name = name;
                 product.notes = note;
@@ -90,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(new ShoppingItemAdapter.OnItemClickListener() {
             @Override
             public void onItemBoughtToggled(ShoppingItem item) {
-                // Найдём соответствующий Product по id
                 updateProductOnServer(item.id, item.name, item.note, item.isBought);
             }
 
@@ -108,51 +104,80 @@ public class MainActivity extends AppCompatActivity {
 
     // === ЗАГРУЗКА СПИСКА ===
     private void loadProductsFromServer() {
-        api.getProducts().enqueue(new Callback<List<Product>>() {
+        api.getProducts().enqueue(new Callback<ProductListResponse>() {
             @Override
-            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<ShoppingItem> items = new ArrayList<>();
-                    for (Product p : response.body()) {
-                        ShoppingItem item = new ShoppingItem();
-                        item.id = p.id;
-                        item.name = p.name;
-                        item.note = p.notes;
-                        item.isBought = p.purchased;
-                        items.add(item);
+            public void onResponse(Call<ProductListResponse> call, Response<ProductListResponse> response) {
+                Log.d("API", "Response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null && response.body().success) {
+                    ProductListResponse apiResponse = response.body();
+                    Product[] products = apiResponse.data;
+
+                    if (products != null) {
+                        List<ShoppingItem> items = new ArrayList<>();
+                        for (Product p : products) {
+                            ShoppingItem item = new ShoppingItem();
+                            item.id = p.id;
+                            item.name = p.name;
+                            item.note = p.notes;
+                            item.isBought = p.purchased;
+                            items.add(item);
+                        }
+                        adapter.setItems(items);
+                        Toast.makeText(MainActivity.this, "Загружено " + items.size() + " товаров", Toast.LENGTH_SHORT).show();
+                        Log.d("API", "Successfully loaded " + items.size() + " items");
+                    } else {
+                        Toast.makeText(MainActivity.this, "Нет товаров", Toast.LENGTH_SHORT).show();
                     }
-                    adapter.setItems(items);
                 } else {
-                    Toast.makeText(MainActivity.this, "Ошибка загрузки: " + response.code(), Toast.LENGTH_SHORT).show();
-                    Log.e("API", "Ошибка: " + response.message());
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "null";
+                        Log.e("API", "Ошибка загрузки: " + response.code() + " | " + errorBody);
+                        Toast.makeText(MainActivity.this, "Ошибка загрузки: " + response.code(), Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
             @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Нет связи с сервером", Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<ProductListResponse> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Нет связи с сервером: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 Log.e("API", "Сетевая ошибка: " + t.getMessage());
+                t.printStackTrace();
             }
         });
     }
 
     // === ДОБАВЛЕНИЕ ТОВАРА ===
     private void createProductOnServer(Product product) {
-        api.createProduct(product).enqueue(new Callback<Product>() {
+        api.createProduct(product).enqueue(new Callback<ProductResponse>() {
             @Override
-            public void onResponse(Call<Product> call, Response<Product> response) {
-                if (response.isSuccessful() && response.body() != null) {
+            public void onResponse(Call<ProductResponse> call, Response<ProductResponse> response) {
+                Log.d("API", "Create response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null && response.body().success) {
+                    Product createdProduct = response.body().data;
                     etItemName.setText("");
                     etItemNote.setText("");
+                    Toast.makeText(MainActivity.this, "Товар добавлен: " + createdProduct.name, Toast.LENGTH_SHORT).show();
                     loadProductsFromServer(); // Обновить список
                 } else {
-                    Toast.makeText(MainActivity.this, "Не удалось добавить товар", Toast.LENGTH_SHORT).show();
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "null";
+                        Log.e("API", "Ошибка добавления: " + response.code() + " | " + errorBody);
+                        Toast.makeText(MainActivity.this, "Ошибка: " + response.code(), Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
             @Override
-            public void onFailure(Call<Product> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Ошибка сети при добавлении", Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<ProductResponse> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Сетевая ошибка при добавлении", Toast.LENGTH_SHORT).show();
+                Log.e("API", "Ошибка сети: " + t.getMessage());
+                t.printStackTrace();
             }
         });
     }
@@ -165,18 +190,21 @@ public class MainActivity extends AppCompatActivity {
         product.notes = notes;
         product.purchased = purchased;
 
-        api.updateProduct(id, product).enqueue(new Callback<Product>() {
+        api.updateProduct(id, product).enqueue(new Callback<ProductResponse>() {
             @Override
-            public void onResponse(Call<Product> call, Response<Product> response) {
-                if (!response.isSuccessful()) {
+            public void onResponse(Call<ProductResponse> call, Response<ProductResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().success) {
+                    Log.d("API", "Товар обновлен: " + id);
+                } else {
                     Log.e("API", "Ошибка обновления: " + response.code());
                     loadProductsFromServer(); // Синхронизировать состояние
                 }
             }
 
             @Override
-            public void onFailure(Call<Product> call, Throwable t) {
+            public void onFailure(Call<ProductResponse> call, Throwable t) {
                 Log.e("API", "Сетевая ошибка при обновлении: " + t.getMessage());
+                t.printStackTrace();
                 loadProductsFromServer(); // Вернуть исходное состояние
             }
         });
@@ -184,18 +212,22 @@ public class MainActivity extends AppCompatActivity {
 
     // === УДАЛЕНИЕ ТОВАРА ===
     private void deleteProductOnServer(int id) {
-        api.deleteProduct(id).enqueue(new Callback<Void>() {
+        api.deleteProduct(id).enqueue(new Callback<BasicResponse>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (!response.isSuccessful()) {
+            public void onResponse(Call<BasicResponse> call, Response<BasicResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().success) {
+                    Toast.makeText(MainActivity.this, "Товар удален", Toast.LENGTH_SHORT).show();
+                    loadProductsFromServer();
+                } else {
                     Log.e("API", "Ошибка удаления: " + response.code());
                     loadProductsFromServer();
                 }
             }
 
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
+            public void onFailure(Call<BasicResponse> call, Throwable t) {
                 Log.e("API", "Сетевая ошибка при удалении: " + t.getMessage());
+                t.printStackTrace();
                 loadProductsFromServer();
             }
         });
