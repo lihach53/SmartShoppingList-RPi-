@@ -11,6 +11,8 @@ public class ShoppingItem {
     public String name;
     public String note;
     public boolean isBought;
+    public String createdAt;
+    public String updatedAt;
 
     // ✅ Обязательный конструктор без параметров
     public ShoppingItem() {}

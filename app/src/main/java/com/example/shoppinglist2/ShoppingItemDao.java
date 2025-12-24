@@ -20,4 +20,11 @@ public interface ShoppingItemDao {
 
     @Delete
     void delete(ShoppingItem item);
+
+    // Дополнительные запросы если нужно
+    @Query("SELECT * FROM shopping_items WHERE isBought = 0 ORDER BY createdAt DESC")
+    List<ShoppingItem> getNotBoughtItems();
+
+    @Query("SELECT * FROM shopping_items WHERE isBought = 1 ORDER BY updatedAt DESC")
+    List<ShoppingItem> getBoughtItems();
 }
