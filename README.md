@@ -39,6 +39,30 @@
 ---
 </details>
 
+<details>
+<summary><strong>Результат</strong></summary>
+
+
+ - Основной экран
+<img width="1280" height="927" alt="image" src="https://github.com/user-attachments/assets/36873d20-0531-4bf7-9031-b89118fb075e" />
+
+ - Добавим заметку (Medium phone) для примера и посмотрим, отобразятся ли изменения на другом устройстве (Pixel 9 Pro)
+<img width="1280" height="561" alt="image" src="https://github.com/user-attachments/assets/6460d19b-fb70-49f8-b6b9-eadd4ce644e1" />
+
+ - Заметка "Кока-кола" также появилась и на другом устройстве
+<img width="565" height="591" alt="image" src="https://github.com/user-attachments/assets/fe507944-a69a-4559-b458-d1a84beff442" />
+
+ - К каждой позиции можно добавлять заметки (категория товара, количество и т.п.)
+<img width="421" height="318" alt="image" src="https://github.com/user-attachments/assets/3bb867cb-e29f-4247-abb0-8b5853ad44e7" />
+
+ - Каждую запись можно отмечать, редактировать, у каждой записи отображается дата и время создания.
+<img width="388" height="123" alt="image" src="https://github.com/user-attachments/assets/ae004dda-c382-40d5-94c1-bfd89c2611d5" />
+
+<img width="401" height="195" alt="image" src="https://github.com/user-attachments/assets/7965c65a-1a39-4370-84af-d0191a6c748e" />
+
+---
+</details>
+   
 ## Команда проекта
 - Баженов Тимофей Иванович - разработка
 - Лихачев Данил Алексеевич - разработка
